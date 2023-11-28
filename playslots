@@ -1,0 +1,104 @@
+function finalBalance = playslots(balance, casinoEnter, entercasinoSplash, entercasinoForeground)
+
+slotsScene = simpleGameEngine('slotsframes.png',50,50,2);
+slotsBg = ones(17,13);
+slotsFg = 285 * ones(size(slotsBg));
+%Indices of possible lines
+
+counter = 1;
+
+%load sounds here
+[yItem,fsItem] = audioread("itembox.mp3");
+slotSpinSFX = audioplayer(yItem,fsItem);
+
+
+for i = 1:17
+    for j = 1:13
+        slotsBg(i, j) = counter;
+        counter = counter + 1;
+        if j == 13
+            counter = counter + 2;
+        end
+    end
+end
+
+while 1
+    finalBalance = balance;
+    slotsFg = balanceWindow(slotsScene, slotsBg,slotsFg,balance);
+    drawScene(slotsScene, slotsBg,slotsFg);
+    [xSlots,ySlots] = getMouseInput(slotsScene);
+    if xSlots == 1 && ySlots == 1
+        close;
+        updateCasinoScreen(casinoEnter, entercasinoSplash, entercasinoForeground,balance)
+        break
+    end
+    if (xSlots == 5 || xSlots == 6) && (ySlots == 2 || ySlots == 3)
+        balance = balance - 100;
+        slotsFg = balanceWindow(slotsScene, slotsBg,slotsFg,balance);
+        [balance,slotsFg] = slotsSpin(slotsScene, slotsBg, slotsFg,slotSpinSFX,balance);
+    end
+end
+
+function [balance,slotsFg] = slotsSpin(slotsScene, slotsBg, slotsFg,slotSpinSFX,balance)
+    play(slotSpinSFX);
+    start_time = tic;
+    while toc(start_time) < 2.5
+        for i = 256:259
+            slotsFg(6, 5) = 256;
+            slotsFg(6, 7) = 257;
+            slotsFg(6, 9) = 258;
+            drawScene(slotsScene, slotsBg, slotsFg);
+            pause(0.1);
+            slotsFg(6, 5) = 257;
+            slotsFg(6, 7) = 258;
+            slotsFg(6, 9) = 259;
+            drawScene(slotsScene, slotsBg, slotsFg);
+            pause(0.1);
+            slotsFg(6, 5) = 258;
+            slotsFg(6, 7) = 259;
+            slotsFg(6, 9) = 256;
+            drawScene(slotsScene, slotsBg, slotsFg);
+            pause(0.1);
+            slotsFg(6, 5) = 259;
+            slotsFg(6, 7) = 256;
+            slotsFg(6, 9) = 257;
+            drawScene(slotsScene, slotsBg, slotsFg);
+            pause(0.1);
+        end
+    end
+    % Rest of your code...
+    slotDisplay = randi([256,259],3);
+    slotsFg(6,5) = slotDisplay(1);
+    slotsFg(6,7) = slotDisplay(2);
+    slotsFg(6,9) = slotDisplay(3);  
+    drawScene(slotsScene, slotsBg, slotsFg);
+    if slotDisplay(1) == slotDisplay(2) && slotDisplay(2) == slotDisplay(3)
+        pause(0.8)
+        for z = 1:3
+            slotsFg(6,5) = 260;
+            slotsFg(6,7) = 260;
+            slotsFg(6,9) = 260; 
+            drawScene(slotsScene, slotsBg, slotsFg);
+            pause(0.5)
+            slotsFg(6,5) = 285;
+            slotsFg(6,7) = 285;
+            slotsFg(6,9) = 285; 
+            drawScene(slotsScene, slotsBg, slotsFg);
+            pause(0.5)
+        end
+        balance = balance + 500; 
+        slotsFg = balanceWindow(slotsScene, slotsBg,slotsFg,balance);
+    end
+    pause(0.5)
+end
+
+
+function slotsFg = balanceWindow(slotsScene, slotsBg,slotsFg,balance)
+    formattedBalance = sprintf('%05d', balance); 
+    for i = 1:5
+        slotsFg(17,i+6) = 262 + str2double(formattedBalance(i));
+    end
+    drawScene(slotsScene, slotsBg,slotsFg);
+end
+
+end
