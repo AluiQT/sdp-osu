@@ -1,0 +1,47 @@
+%Splashscreen
+
+splashscreen = simpleGameEngine('whack.png',199,199);
+casinoEnter = simpleGameEngine('casinoenter.png',249,249);
+
+%Create GUI
+
+backgroundSplash = zeros(5,5);
+counterBg = 1;
+
+for i = 1:5
+    for j = 1:5
+        backgroundSplash(i,j) = counterBg;
+        counterBg = counterBg + 1;
+    end  
+end
+
+splashforeground = 26 * ones(size(backgroundSplash));
+
+splashforeground(3,3) = 31;
+splashforeground(4,3) = 32;
+
+entercasinoSplash = zeros(4,4);
+counterSplash = 1;
+for i = 1:4
+    for j = 1:4
+        entercasinoSplash(i,j) = counterSplash;
+        counterSplash = counterSplash + 1;
+    end  
+end
+
+entercasinoForeground = 22 * ones(size(entercasinoSplash));
+entercasinoForeground(2,1) = 17;
+entercasinoForeground(2,2) = 18;
+entercasinoForeground(2,3) = 19;
+entercasinoForeground(2,4) = 20;
+
+
+%create a universal balance for every game
+balance = 10000;
+
+
+
+%calls the function to start the game
+firstscreen(splashscreen,backgroundSplash,splashforeground,casinoEnter, entercasinoSplash, entercasinoForeground,balance)
+                
+
