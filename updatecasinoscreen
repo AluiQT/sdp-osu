@@ -1,0 +1,48 @@
+function updateCasinoScreen(casinoEnter, entercasinoSplash, entercasinoForeground,balance)
+    %load audio
+    [yRouletteSound, FsRouletteSound] = audioread('itsRoulette.mp3');
+    [ySlotsSound, FsSlotsSound] = audioread('itsSlots.mp3');
+    [yBlackjackSound, FsBlackjackSound] = audioread('itsBlackjack.mp3'); 
+    [yWarSound,FsWarSound] = audioread('itsWar.mp3'); 
+    itsRoulette = audioplayer(yRouletteSound, FsRouletteSound);
+    itsSlots = audioplayer(ySlotsSound, FsSlotsSound);
+    itsBlackjack = audioplayer(yBlackjackSound, FsBlackjackSound);
+    itsWar = audioplayer(yWarSound,FsWarSound);
+    %final balance constant
+    finalBalance = 0;
+    while 1
+        balance = balance - finalBalance;  
+        drawScene(casinoEnter, entercasinoSplash, entercasinoForeground);
+        fprintf('%d',balance)
+        [x2, y2] = getMouseInput(casinoEnter);
+        if x2 == 2 && y2 == 1
+            close;
+            play(itsRoulette)
+            pause(1)
+            finalBalance = letsplayroulette(casinoEnter, entercasinoSplash, entercasinoForeground,balance);
+            break;
+        elseif x2 == 2 && y2 == 2
+            close;
+            play(itsSlots)
+            pause(1)
+            finalBalance = playslots(balance, casinoEnter, entercasinoSplash, entercasinoForeground);
+            break;
+        elseif x2 == 2 && y2 == 3 
+            close;
+            play(itsBlackjack)
+            pause(1)
+            finalBalance = blackjackus(balance,casinoEnter, entercasinoSplash, entercasinoForeground);
+            break;
+        elseif x2 == 2 && y2 == 4
+            close;
+            play(itsWar)
+            pause(1)
+            finalBalance = warFunction(balance,casinoEnter, entercasinoSplash, entercasinoForeground);
+            break;
+        elseif x2 == 1 && y2 == 1
+            close;
+            firstscreen(splashscreen,backgroundSplash,splashforeground,welcomeSound,quitSound,lofi,casinoEnter, entercasinoSplash, entercasinoForeground,balance)
+            break;
+        end
+    end
+end
