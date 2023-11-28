@@ -1,0 +1,1270 @@
+function finalBalance = blackjackus(balance,casinoEnter, entercasinoSplash, entercasinoForeground)
+
+
+card_scene = simpleGameEngine('blackjackSprites.png',16,16,8,[255,255,255]);
+topBorder = [163,163,163,163,163,163,163,163,163,163];
+bottomBorder = [165,165,165,165,165,165,165,165,165,165];
+leftBorder = [167;166;166;166;166;166;166;169];
+rightBorder = [168;164;164;164;164;164;164;170];
+blackjackTable = [topBorder;11:20;21:30;31:40;41:50;51:60;171:180;bottomBorder];
+blackjackTable = horzcat(leftBorder,blackjackTable,rightBorder);
+foreground = ones(size(blackjackTable));
+
+newBalance = balance;
+currentBet = 0;
+deck = 61:112;
+playerHand = [];
+playerHand2 = [];
+dealerHand = [];
+turn = 1;
+winner = 0;
+loser = 0;
+playerValue = 0;
+dealerValue = 0;
+aces = 0;
+acesD = 0;
+aces2 = 0;
+playerValue2 = 0;
+stand = 0;
+balanceValues = 181:190;
+start = 0;
+doubledown = 0;
+
+%create dict mapping values
+[y4,Fs4] = audioread('cardflip.mp3');
+cardflip = audioplayer(y4, Fs4);
+[y5,Fs5] = audioread('whoosh.mp3');
+carddeal = audioplayer(y5, Fs5); 
+d = dictionary();
+d2 = dictionary();
+counter = 1;
+for i = 1:length(deck)
+    if counter >= 1 && counter <= 10
+    d = insert(d,deck(i),counter);
+    counter = counter + 1;
+    elseif counter >= 11 && counter <= 13
+        d = insert(d,deck(i),10);
+        counter = counter + 1;
+        if counter == 14
+            counter = 1;
+        end
+    end
+end
+
+    
+
+
+
+
+while 1  
+    %Constantly draw scene
+    if start ~= 1
+        if currentBet == 0
+            foreground = balanceButton(foreground,newBalance);
+            foreground(3,2) = 1;
+            foreground(3,3) = 1;
+            foreground(3,4) = 191;
+            foreground(3,5) = 192;
+            foreground(3,6) = 193;
+            foreground(3,7) = 194;
+            foreground(3,8) = 195;
+            foreground(3,9) = 196;
+            foreground(3,10) = 1;
+            foreground(3,11) = 1;
+            drawScene(card_scene,blackjackTable,foreground); 
+            [x,y] = getMouseInput(card_scene);
+        end
+        if (x == 2 && y == 2)
+            close;
+            updateCasinoScreen(casinoEnter, entercasinoSplash, entercasinoForeground,balance)
+            break;
+        end
+        if (x == 7 && y == 9) && currentBet <= 1900
+            currentBet = currentBet + 100;
+            newBalance = balance - currentBet;
+            foreground = balanceButton(foreground,newBalance);
+            foreground(3,4) = 1;
+            foreground(3,5) = 1;
+            foreground(3,6) = (198 + (currentBet/100));
+            foreground(3,7) = 198;
+            foreground(3,8) = 1;
+            foreground(3,9) = 1;
+            foreground(3,2) = 219;
+            foreground(3,3) = 220;
+            foreground(3,10) = 145;
+            foreground(3,11) = 146;
+            drawScene(card_scene,blackjackTable,foreground);
+
+        elseif (x == 7 && y == 10) && currentBet <= 1500
+            currentBet = currentBet + 500;
+            newBalance = balance - currentBet;
+            foreground = balanceButton(foreground,newBalance);
+            foreground(3,4) = 1;
+            foreground(3,5) = 1;
+            foreground(3,6) = (198 + (currentBet/100));
+            foreground(3,7) = 198;
+            foreground(3,8) = 1;
+            foreground(3,9) = 1;
+            foreground(3,2) = 219;
+            foreground(3,3) = 220;
+            foreground(3,10) = 145;
+            foreground(3,11) = 146;
+            drawScene(card_scene,blackjackTable,foreground);
+
+        elseif (x == 7 && y == 11) && currentBet <= 1000
+            currentBet = currentBet + 1000;
+            newBalance = balance - currentBet;
+            foreground = balanceButton(foreground,newBalance);
+            foreground(3,4) = 1;
+            foreground(3,5) = 1;
+            foreground(3,6) = (198 + (currentBet/100));
+            foreground(3,7) = 198;
+            foreground(3,8) = 1;
+            foreground(3,9) = 1;
+            foreground(3,2) = 219;
+            foreground(3,3) = 220;
+            foreground(3,10) = 145;
+            foreground(3,11) = 146;
+            drawScene(card_scene,blackjackTable,foreground);
+
+        elseif (x == 3 && (y == 2 || y ==3)) && currentBet > 0
+            newBalance = newBalance + currentBet;
+            currentBet = 0;
+            foreground = ones(size(blackjackTable));
+            foreground = balanceButton(foreground,newBalance);
+            drawScene(card_scene,blackjackTable,foreground);
+
+        elseif (x == 3 && (y == 10 || y == 11)) && currentBet > 0
+            foreground = ones(size(blackjackTable));
+            foreground = balanceButton(foreground,newBalance);
+            drawScene(card_scene,blackjackTable,foreground);
+            start = 1;
+        end
+    end
+    drawScene(card_scene,blackjackTable,foreground);
+    if isempty(dealerHand) && start == 1
+        foreground(2,11) = 136;
+        foreground(5,11) = 136;
+    end
+   
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Draws the First 4 cards %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    if length(dealerHand) < 2 && winner ~= 1 && start == 1
+        [playerHand, dealerHand, card, deck] = dealCard(turn,deck,playerHand,dealerHand); 
+        [aces,playerValue] = playertotal(playerHand,d,playerValue,aces);
+        foreground(4,6) = 4;
+        play(carddeal)
+        pause(0.5)
+        drawScene(card_scene,blackjackTable,foreground);
+        pause(0.4)
+        foreground(4,7) = 4;
+        play(carddeal)
+        pause(0.5)
+        drawScene(card_scene,blackjackTable,foreground);
+        pause(0.4)
+        foreground(2,6) = 4;
+        play(carddeal)
+        pause(0.6)
+        drawScene(card_scene,blackjackTable,foreground);
+        pause(0.4)
+        foreground(2,7) = 4;
+        play(carddeal)
+        pause(0.6)
+        drawScene(card_scene,blackjackTable,foreground);
+        foreground(4,6) = 113;
+        pause(0.7)
+        play(cardflip)
+        drawScene(card_scene,blackjackTable,foreground);
+        foreground(4,6) = card;
+        pause(0.2)
+        foreground(5,11) = 112 + playerValue;
+        drawScene(card_scene,blackjackTable,foreground);
+        [playerHand, dealerHand, card, deck] = dealCard(turn,deck,playerHand,dealerHand);
+        [aces,playerValue] = playertotal(playerHand,d,playerValue,aces);
+        foreground(4,7) = 113;
+        pause(0.5)
+        play(cardflip)
+        drawScene(card_scene,blackjackTable,foreground);
+        foreground(4,7) = card;
+        pause(0.2)
+        foreground(5,11) = 112 + playerValue;
+        drawScene(card_scene,blackjackTable,foreground);
+        turn = 0;
+
+        [playerHand, dealerHand, card, deck] = dealCard(turn,deck,playerHand,dealerHand);
+        [acesD,dealerValue] = dealertotal(dealerHand,d,dealerValue,acesD);
+        foreground(2,6) = 113;
+        pause(0.5)
+        play(cardflip)
+        drawScene(card_scene,blackjackTable,foreground);
+        foreground(2,6) = card;
+        pause(0.2)
+        foreground(2,11) = 112 + dealerValue;
+        drawScene(card_scene,blackjackTable,foreground);
+        [playerHand, dealerHand, card, deck] = dealCard(turn,deck,playerHand,dealerHand);
+        foreground(2,7) = 4;
+        pause(0.7)
+        drawScene(card_scene,blackjackTable,foreground);
+        turn = 1;
+        if playerValue == 21  
+            if dealerValue ~= 21
+            foreground(3,2) = 137;
+            foreground(3,3) = 138;
+            foreground(4,2) = 139;
+            foreground(4,3) = 140;
+            newBalance = balance + (currentBet * 1.5);
+            foreground = balanceButton(foreground,newBalance);
+            drawScene(card_scene,blackjackTable,foreground);
+            winner = 1;
+            else
+            foreground(3,2) = 143;
+            foreground(3,3) = 144;
+            end
+        end
+    end
+    
+    
+    [x,y] = getMouseInput(card_scene);
+    if turn == 1 && winner ~= 1 && start == 1
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Hit Button %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        if x == 6 && (y == 5 || y == 6) && playerValue ~= 21 && playerValue2 == 0 && doubledown == 0
+            %function goes here
+            if length(playerHand) == 2 
+                [playerHand, dealerHand, card, deck] = dealCard(turn,deck,playerHand,dealerHand);
+                foreground(4,5) = playerHand(1);
+                foreground(4,6) = playerHand(2);
+                foreground(4,7) = 1;
+                drawScene(card_scene,blackjackTable,foreground);
+                foreground(4,7) = playerHand(3);
+                play(carddeal)
+                pause(0.35)
+                [aces,playerValue] = playertotal(playerHand,d,playerValue,aces);
+                foreground(5,11) = 112 + playerValue;
+                if playerValue > 21
+                    foreground(5,11) = 136;
+                    drawScene(card_scene,blackjackTable,foreground);
+                    pause(0.5)
+                    foreground(5,6) = 134;
+                    foreground(5,7) = 135;
+                    drawScene(card_scene,blackjackTable,foreground);
+                    pause(1)
+                    foreground(3,2) = 137;
+                    foreground(3,3) = 138;
+                    foreground(4,2) = 141;
+                    foreground(4,3) = 142;
+                    balance = newBalance;
+                    winner = 1;
+                end
+                drawScene(card_scene,blackjackTable,foreground);
+                
+            elseif length(playerHand) == 3 
+                [playerHand, dealerHand, card, deck] = dealCard(turn,deck,playerHand,dealerHand);
+                foreground(4,5) = playerHand(1);
+                foreground(4,6) = playerHand(2);
+                foreground(4,7) = playerHand(3);
+                drawScene(card_scene,blackjackTable,foreground);
+                foreground(4,8) = playerHand(4);
+                play(carddeal)
+                pause(0.35)
+                [aces,playerValue] = playertotal(playerHand,d,playerValue,aces);
+                pause(.1)
+                foreground(5,11) = 112 + playerValue;
+                if playerValue > 21
+                    foreground(5,11) = 136;
+                    drawScene(card_scene,blackjackTable,foreground);
+                    pause(0.5)
+                    foreground(5,6) = 134;
+                    foreground(5,7) = 135;
+                    drawScene(card_scene,blackjackTable,foreground);
+                    pause(1)
+                    foreground(3,2) = 137;
+                    foreground(3,3) = 138;
+                    foreground(4,2) = 141;
+                    foreground(4,3) = 142;
+                    balance = newBalance;
+                    winner = 1;
+                end
+                drawScene(card_scene,blackjackTable,foreground);
+
+            elseif length(playerHand) == 4
+                [playerHand, dealerHand, card, deck] = dealCard(turn,deck,playerHand,dealerHand);
+                foreground(4,4) = playerHand(1);
+                foreground(4,5) = playerHand(2);
+                foreground(4,6) = playerHand(3);
+                foreground(4,7) = playerHand(4);
+                foreground(4,8) = 1;
+                drawScene(card_scene,blackjackTable,foreground);
+                foreground(4,8) = playerHand(5);
+                play(carddeal)
+                pause(0.35)
+                [aces,playerValue] = playertotal(playerHand,d,playerValue,aces);
+                pause(0.5)
+                foreground(5,11) = 112 + playerValue;
+                if playerValue > 21
+                    foreground(5,11) = 136;
+                    drawScene(card_scene,blackjackTable,foreground);
+                    pause(0.5)
+                    foreground(5,6) = 134;
+                    foreground(5,7) = 135;
+                    drawScene(card_scene,blackjackTable,foreground);
+                    pause(1)
+                    foreground(3,2) = 137;
+                    foreground(3,3) = 138;
+                    foreground(4,2) = 141;
+                    foreground(4,3) = 142;
+                    balance = newBalance;
+                    winner = 1;
+                end
+                drawScene(card_scene,blackjackTable,foreground);
+
+            elseif length(playerHand) == 5
+                [playerHand, dealerHand, card, deck] = dealCard(turn,deck,playerHand,dealerHand);
+                foreground(4,4) = playerHand(1);
+                foreground(4,5) = playerHand(2);
+                foreground(4,6) = playerHand(3);
+                foreground(4,7) = playerHand(4);
+                foreground(4,8) = playerHand(5);
+                drawScene(card_scene,blackjackTable,foreground);
+                foreground(4,9) = playerHand(6);
+                play(carddeal)
+                pause(0.35)
+                [aces,playerValue] = playertotal(playerHand,d,playerValue,aces);
+                pause(0.5)
+                foreground(5,11) = 112 + playerValue;
+                if playerValue > 21
+                    foreground(5,11) = 136;
+                    drawScene(card_scene,blackjackTable,foreground);
+                    pause(0.5)
+                    foreground(5,6) = 134;
+                    foreground(5,7) = 135;
+                    drawScene(card_scene,blackjackTable,foreground);
+                    pause(1)
+                    foreground(3,2) = 137;
+                    foreground(3,3) = 138;
+                    foreground(4,2) = 141;
+                    foreground(4,3) = 142;
+                    balance = newBalance;
+                    winner = 1;
+                end
+                drawScene(card_scene,blackjackTable,foreground);
+            elseif length(playerHand) == 6
+                [playerHand, dealerHand, card, deck] = dealCard(turn,deck,playerHand,dealerHand);
+                foreground(4,3) = playerHand(1);
+                foreground(4,4) = playerHand(2);
+                foreground(4,5) = playerHand(3);
+                foreground(4,6) = playerHand(4);
+                foreground(4,7) = playerHand(5);
+                foreground(4,8) = playerHand(6);
+                foreground(4,9) = 1;
+                drawScene(card_scene,blackjackTable,foreground);
+                foreground(4,9) = playerHand(7);
+                play(carddeal)
+                pause(0.35)
+                [aces,playerValue] = playertotal(playerHand,d,playerValue,aces);
+                pause(0.5)
+                foreground(5,11) = 112 + playerValue;
+                if playerValue > 21
+                    foreground(5,11) = 136;
+                    drawScene(card_scene,blackjackTable,foreground);
+                    pause(0.5)
+                    foreground(5,6) = 134;
+                    foreground(5,7) = 135;
+                    drawScene(card_scene,blackjackTable,foreground);
+                    pause(1)
+                    foreground(3,2) = 137;
+                    foreground(3,3) = 138;
+                    foreground(4,2) = 141;
+                    foreground(4,3) = 142;
+                    balance = newBalance;
+                    winner = 1;
+                end
+                drawScene(card_scene,blackjackTable,foreground);
+            elseif length(playerHand) == 7
+                [playerHand, dealerHand, card, deck] = dealCard(turn,deck,playerHand,dealerHand);
+                foreground(4,3) = playerHand(1);
+                foreground(4,4) = playerHand(2);
+                foreground(4,5) = playerHand(3);
+                foreground(4,6) = playerHand(4);
+                foreground(4,7) = playerHand(5);
+                foreground(4,8) = playerHand(6);
+                foreground(4,9) = playerHand(7);
+                foreground(4,10) = playerHand(8);
+                play(carddeal)
+                pause(0.35)
+                [aces,playerValue] = playertotal(playerHand,d,playerValue,aces);
+                pause(0.5)
+                foreground(5,11) = 112 + playerValue;
+                drawScene(card_scene,blackjackTable,foreground);
+                if playerValue > 21
+                    foreground(5,11) = 136;
+                    drawScene(card_scene,blackjackTable,foreground);
+                    pause(0.5)
+                    foreground(5,6) = 134;
+                    foreground(5,7) = 135;
+                    drawScene(card_scene,blackjackTable,foreground);
+                    pause(1)
+                    foreground(3,2) = 137;
+                    foreground(3,3) = 138;
+                    foreground(4,2) = 141;
+                    foreground(4,3) = 142;
+                    balance = newBalance;
+                    winner = 1;
+                end
+                drawScene(card_scene,blackjackTable,foreground);
+            end
+        
+    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Split Button %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        elseif (x == 6 && (y == 7 || y == 8)) && (d(playerHand(1)) == d(playerHand(2))) && (length(playerHand) == 2) && (isempty(playerHand2))
+        %function goes here
+            if isempty(playerHand2)
+                playerHand2 = [playerHand2, playerHand(2)];
+                playerHand(2) = [];
+            end
+            [aces,playerValue] = playertotal(playerHand,d,playerValue,aces);
+            [aces2,playerValue2] = player2total(playerHand2,d,aces2,playerValue2);
+            newBalance = newBalance - (currentBet * 2);
+            foreground = balanceButton(foreground,newBalance);
+            foreground(4,5) = playerHand(1);
+            foreground(4,8) = playerHand2(1);
+            foreground(4,6) = 1;
+            foreground(4,7) = 1;
+            foreground(5,2) = 161;
+            foreground(5,3) = 162;
+            foreground(5,11) = 112 + playerValue2;
+            foreground(5,4) = 112 + playerValue;
+            drawScene(card_scene,blackjackTable,foreground);
+            [playerHand, dealerHand, ~, deck] = dealCard(turn,deck,playerHand,dealerHand);
+            pause(0.5)
+            foreground(4,4) = playerHand(2);
+            [aces,playerValue] = playertotal(playerHand,d,playerValue,aces);
+            foreground(5,4) = 112 + playerValue;
+            play(carddeal)
+            pause(0.35)
+            drawScene(card_scene,blackjackTable,foreground);
+            pause(0.5)
+            [playerHand2, card, deck] = dealCard2(turn,deck,playerHand2);
+            foreground(4,9) = playerHand2(2);
+            [aces2,playerValue2] = player2total(playerHand2,d,aces2,playerValue2);
+            foreground(5,11) = 112 + playerValue2;
+            play(carddeal)
+            pause(0.35)
+            drawScene(card_scene,blackjackTable,foreground);
+            
+
+        
+        %Hitting for first deck in a split
+        elseif (x == 6 && (y == 5 || y == 6)) && (playerValue2 > 0) && (loser ~= 1) && (stand == 0) && (playerValue ~= 21)
+            if length(playerHand) == 2
+                [playerHand, dealerHand, card, deck] = dealCard(turn,deck,playerHand,dealerHand);
+                foreground(4,5) = playerHand(1);
+                foreground(4,4) = playerHand(2);
+                foreground(4,3) = playerHand(3);
+                drawScene(card_scene,blackjackTable,foreground);
+                play(carddeal)
+                pause(0.35)
+                [aces,playerValue] = playertotal(playerHand,d,playerValue,aces);
+                foreground(5,4) = 112 + playerValue;
+                if playerValue > 21
+                    foreground(5,4) = 136;
+                    drawScene(card_scene,blackjackTable,foreground);
+                    pause(0.5)
+                    foreground(5,5) = 134;
+                    foreground(5,6) = 135;
+                    drawScene(card_scene,blackjackTable,foreground);
+                    pause(1)
+                    loser = loser + 1;
+                    playerValue = 0;
+                end
+                drawScene(card_scene,blackjackTable,foreground);
+            elseif length(playerHand) == 3
+                [playerHand, dealerHand, card, deck] = dealCard(turn,deck,playerHand,dealerHand);
+                foreground(4,5) = playerHand(1);
+                foreground(4,4) = playerHand(2);
+                foreground(4,3) = playerHand(3);
+                foreground(4,2) = playerHand(4);
+                drawScene(card_scene,blackjackTable,foreground);
+                play(carddeal)
+                pause(0.35)
+                [aces,playerValue] = playertotal(playerHand,d,playerValue,aces);
+                foreground(5,4) = 112 + playerValue;
+                if playerValue > 21
+                    foreground(5,4) = 136;
+                    drawScene(card_scene,blackjackTable,foreground);
+                    pause(0.5)
+                    foreground(5,5) = 134;
+                    foreground(5,6) = 135;
+                    drawScene(card_scene,blackjackTable,foreground);
+                    pause(1)
+                    loser = loser + 1;
+                    playerValue = 0;
+                end
+                drawScene(card_scene,blackjackTable,foreground);
+            end
+        
+        %hitting for second deck in split
+        elseif (x == 6 && (y == 5 || y == 6)) && (playerValue2 > 0) && ((loser == 1) || (stand == 1)) && (playerValue2 ~= 21)
+            if length(playerHand2) == 2
+                [playerHand2, card, deck] = dealCard2(turn,deck,playerHand2);
+                foreground(4,8) = playerHand2(1);
+                foreground(4,9) = playerHand2(2);
+                foreground(4,10) = playerHand2(3);
+                drawScene(card_scene,blackjackTable,foreground);
+                play(carddeal)
+                pause(0.35)
+                [aces2,playerValue2] = player2total(playerHand2,d,aces2,playerValue2);
+                foreground(5,11) = 112 + playerValue2;
+                if playerValue > 21
+                    foreground(5,11) = 136;
+                    drawScene(card_scene,blackjackTable,foreground);
+                    pause(0.5)
+                    foreground(5,7) = 134;
+                    foreground(5,8) = 135;
+                    drawScene(card_scene,blackjackTable,foreground);
+                    pause(1)
+                    loser = loser + 1;
+                    playerValue2 = 0;
+                end
+                drawScene(card_scene,blackjackTable,foreground);
+            elseif length(playerHand2) == 3
+                [playerHand2, card, deck] = dealCard2(turn,deck,playerHand2);
+                foreground(4,8) = playerHand2(1);
+                foreground(4,9) = playerHand2(2);
+                foreground(4,10) = playerHand2(3);
+                foreground(4,11) = playerHand2(4);
+                drawScene(card_scene,blackjackTable,foreground);
+                play(carddeal)
+                pause(0.35)
+                [aces2,playerValue2] = player2total(playerHand2,d,aces2,playerValue2);
+                foreground(5,11) = 112 + playerValue2;
+                if playerValue > 21
+                    foreground(5,11) = 136;
+                    drawScene(card_scene,blackjackTable,foreground);
+                    pause(0.5)
+                    foreground(5,7) = 134;
+                    foreground(5,8) = 135;
+                    drawScene(card_scene,blackjackTable,foreground);
+                    pause(1)
+                    loser = loser + 1;
+                    playerValue2 = 0;
+                end
+                drawScene(card_scene,blackjackTable,foreground);
+            end
+
+            
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Double Down Button %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        elseif x == 6 && (y == 9 || y == 10) && (length(playerHand) == 2)
+                newBalance = balance - (2*currentBet);
+                foreground = balanceButton(foreground,newBalance);
+                [playerHand, dealerHand, card, deck] = dealCard(turn,deck,playerHand,dealerHand);
+                foreground(4,5) = playerHand(1);
+                foreground(4,6) = playerHand(2);
+                foreground(4,7) = 1;
+                drawScene(card_scene,blackjackTable,foreground);
+                foreground(4,7) = playerHand(3);
+                play(carddeal)
+                pause(0.35)
+                [aces,playerValue] = playertotal(playerHand,d,playerValue,aces);
+                foreground(5,11) = 112 + playerValue;
+                if playerValue > 21
+                    foreground(5,11) = 136;
+                    drawScene(card_scene,blackjackTable,foreground);
+                    pause(0.5)
+                    foreground(5,6) = 134;
+                    foreground(5,7) = 135;
+                    drawScene(card_scene,blackjackTable,foreground);
+                    pause(1)
+                    foreground(3,2) = 137;
+                    foreground(3,3) = 138;
+                    foreground(4,2) = 141;
+                    foreground(4,3) = 142;
+                    balance = newBalance;
+                    winner = 1;
+                end
+                drawScene(card_scene,blackjackTable,foreground);
+                doubledown = 1;
+        
+        
+        
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Stand Button %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+        elseif (x == 6 && (y == 3 || y == 4)) && ((playerValue2 == 0) || (length(playerHand2) >= 2) && ((stand == 1) || (loser == 1)))
+            turn = 0;
+            [acesD,dealerValue] = dealertotal(dealerHand,d,dealerValue,acesD);
+            if dealerValue > 21
+                foreground(3,5) = 134;
+                foreground(3,7) = 135;
+                foreground(2,11) = 136;
+                drawScene(card_scene,blackjackTable,foreground);
+                pause(1)
+                foreground(3,2) = 137;
+                foreground(3,3) = 138;
+                foreground(4,2) = 139;
+                foreground(4,3) = 140;
+                drawScene(card_scene,blackjackTable,foreground);
+                newBalance = balance + currentBet;
+                foreground = balanceButton(foreground,newBalance);
+                
+                winner = 1;
+            end
+
+            if dealerValue >= 17 && length(dealerHand) == 2
+                foreground(2,7) = 113; 
+                play(cardflip)
+                drawScene(card_scene,blackjackTable,foreground);
+                foreground(2,7) = dealerHand(2);
+                foreground(2,11) = 112 + dealerValue;
+                pause(0.2)
+                drawScene(card_scene,blackjackTable,foreground);
+            end
+        
+            while dealerValue < 17
+                if length(dealerHand) == 2
+                    [playerHand, dealerHand, card, deck] = dealCard(turn,deck,playerHand,dealerHand);
+                    foreground(2,7) = 113; 
+                    play(cardflip)
+                    drawScene(card_scene,blackjackTable,foreground);
+                    foreground(2,7) = dealerHand(2);
+                    foreground(2,11) = 112 + dealerValue;
+                    pause(0.2)
+                    drawScene(card_scene,blackjackTable,foreground);
+                    drawScene(card_scene,blackjackTable,foreground);
+                    foreground(2,5) = dealerHand(1);
+                    foreground(2,6) = dealerHand(2);
+                    foreground(2,7) = 1;
+                    pause(0.5)
+                    drawScene(card_scene,blackjackTable,foreground);
+                    foreground(2,7) = dealerHand(3);
+                    play(carddeal)
+                    pause(0.35)
+                    [acesD,dealerValue] = dealertotal(dealerHand,d,dealerValue,acesD);
+                    foreground(2,11) = 112 + dealerValue;
+                    if dealerValue > 21
+                        foreground(2,11) = 136;
+                        drawScene(card_scene,blackjackTable,foreground);
+                        pause(0.5)
+                        foreground(3,6) = 134;
+                        foreground(3,7) = 135;
+                        drawScene(card_scene,blackjackTable,foreground);
+                        pause(1)
+                        foreground(3,2) = 137;
+                        foreground(3,3) = 138;
+                        foreground(4,2) = 139;
+                        foreground(4,3) = 140;
+                        newBalance = balance + currentBet;
+                        foreground = balanceButton(foreground,newBalance);
+                        drawScene(card_scene,blackjackTable,foreground);
+                        winner = 1;
+                        break
+                    end
+                    drawScene(card_scene,blackjackTable,foreground);
+                elseif length(dealerHand) == 3
+                    [playerHand, dealerHand, card, deck] = dealCard(turn,deck,playerHand,dealerHand);
+                    pause(0.5)
+                    foreground(2,5) = dealerHand(1);
+                    foreground(2,6) = dealerHand(2);
+                    foreground(2,7) = dealerHand(3);
+                    foreground(2,8) = dealerHand(4);
+                    play(carddeal)
+                    pause(0.35)
+                    drawScene(card_scene,blackjackTable,foreground);
+                    play(carddeal)
+                    pause(0.35)
+                    [acesD,dealerValue] = dealertotal(dealerHand,d,dealerValue,acesD);
+                    foreground(2,11) = 112 + dealerValue;
+                    if dealerValue > 21
+                        foreground(2,11) = 136;
+                        drawScene(card_scene,blackjackTable,foreground);
+                        pause(0.5)
+                        foreground(3,6) = 134;
+                        foreground(3,7) = 135;
+                        drawScene(card_scene,blackjackTable,foreground);
+                        pause(1)
+                        foreground(3,2) = 137;
+                        foreground(3,3) = 138;
+                        foreground(4,2) = 139;
+                        foreground(4,3) = 140;
+                        newBalance = balance + currentBet;
+                        foreground = balanceButton(foreground,newBalance);
+                        drawScene(card_scene,blackjackTable,foreground);
+                        winner = 1;
+                        break
+                    end
+                    drawScene(card_scene,blackjackTable,foreground);
+                elseif length(dealerHand) == 4
+                    [playerHand, dealerHand, card, deck] = dealCard(turn,deck,playerHand,dealerHand);
+                    foreground(2,4) = dealerHand(1);
+                    foreground(2,5) = dealerHand(2);
+                    foreground(2,6) = dealerHand(3);
+                    foreground(2,7) = dealerHand(4);
+                    foreground(2,8) = dealerHand(5);
+                    pause(0.5)
+                    drawScene(card_scene,blackjackTable,foreground);
+                    play(carddeal)
+                    pause(0.35)
+                    [acesD,dealerValue] = dealertotal(dealerHand,d,dealerValue,acesD);
+                    foreground(2,11) = 112 + dealerValue;
+                    if dealerValue > 21
+                        foreground(2,11) = 136;
+                        drawScene(card_scene,blackjackTable,foreground);
+                        pause(0.5)
+                        foreground(3,6) = 134;
+                        foreground(3,7) = 135;
+                        drawScene(card_scene,blackjackTable,foreground);
+                        pause(1)
+                        foreground(3,2) = 137;
+                        foreground(3,3) = 138;
+                        foreground(4,2) = 139;
+                        foreground(4,3) = 140;
+                        newBalance = balance + currentBet;
+                        foreground = balanceButton(foreground,newBalance);
+                        drawScene(card_scene,blackjackTable,foreground);
+                        winner = 1;
+                        break
+                    end
+                    drawScene(card_scene,blackjackTable,foreground);
+                elseif length(dealerHand) == 5
+                    [playerHand, dealerHand, card, deck] = dealCard(turn,deck,playerHand,dealerHand);
+                    foreground(2,3) = dealerHand(1);
+                    foreground(2,4) = dealerHand(2);
+                    foreground(2,5) = dealerHand(3);
+                    foreground(2,6) = dealerHand(4);
+                    foreground(2,7) = dealerHand(5);
+                    foreground(2,8) = dealerHand(6);
+                    pause(0.5)
+                    drawScene(card_scene,blackjackTable,foreground);
+                    play(carddeal)
+                    pause(0.35)
+                    [acesD,dealerValue] = dealertotal(dealerHand,d,dealerValue,acesD);
+                    foreground(2,11) = 112 + dealerValue;
+                    if dealerValue > 21
+                        foreground(2,11) = 136;
+                        drawScene(card_scene,blackjackTable,foreground);
+                        pause(0.5)
+                        foreground(3,6) = 134;
+                        foreground(3,7) = 135;
+                        drawScene(card_scene,blackjackTable,foreground);
+                        pause(1)
+                        foreground(3,2) = 137;
+                        foreground(3,3) = 138;
+                        foreground(4,2) = 139;
+                        foreground(4,3) = 140;
+                        newBalance = balance + currentBet;
+                        foreground = balanceButton(foreground,newBalance);
+                        drawScene(card_scene,blackjackTable,foreground);
+                        winner = 1;
+                        break
+                    end
+                    drawScene(card_scene,blackjackTable,foreground);
+                end
+
+            end
+        elseif (x == 6 && (y == 3 || y == 4)) && playerValue2 > 0
+            stand = 1;
+        end
+    end
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Winner Check %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    if dealerValue >= 17 && winner ~= 1
+        if (dealerValue > playerValue) && (dealerValue > playerValue2)
+            foreground(3,2) = 137;
+            foreground(3,3) = 138;
+            foreground(4,2) = 141;
+            foreground(4,3) = 142;
+            drawScene(card_scene,blackjackTable,foreground);
+            winner = 1;
+        elseif (dealerValue < playerValue) || (dealerValue < playerValue2)
+            foreground(3,2) = 137;
+            foreground(3,3) = 138;
+            foreground(4,2) = 139;
+            foreground(4,3) = 140;
+            drawScene(card_scene,blackjackTable,foreground);
+            winner = 1;
+            newBalance = balance + currentBet;
+            foreground = balanceButton(foreground,newBalance);
+        else 
+            foreground(3,2) = 143;
+            foreground(3,3) = 144;
+            winner = 1;
+        end
+    end
+
+    if loser == 2
+         foreground(3,2) = 137;
+         foreground(3,3) = 138;
+         foreground(4,2) = 141;
+         foreground(4,3) = 142;
+         winner = 1;
+         drawScene(card_scene,blackjackTable,foreground);
+    end
+    
+    if winner == 1
+        foreground(3,5) = 145;
+        foreground(3,6) = 146;
+        foreground(3,7) = 147;
+        foreground(3,8) = 148;
+        drawScene(card_scene,blackjackTable,foreground);
+        if x == 3 && (y == 5 || y == 6)
+            foreground(3,5) = 149;
+            foreground(3,6) = 150;
+            drawScene(card_scene,blackjackTable,foreground);
+            foreground = ones(size(blackjackTable));
+            pause(0.1)
+            currentBet = 0;
+            deck = 61:112;
+            playerHand = [];
+            playerHand2 = [];
+            dealerHand = [];
+            turn = 1;
+            winner = 0;
+            loser = 0;
+            playerValue = 0;
+            dealerValue = 0;
+            aces = 0;
+            acesD = 0;
+            aces2 = 0;
+            playerValue2 = 0;
+            stand = 0;
+            start = 0;
+            balance = newBalance;
+            doubledown = 0;
+        elseif x == 3 && (y == 7 || y == 8 )
+            close;
+            updateCasinoScreen(casinoEnter, entercasinoSplash, entercasinoForeground,balance)
+            break;
+        end
+    end
+
+end
+
+
+
+
+
+function [playerHand, dealerHand, card, deck] = dealCard(turn,deck,playerHand,dealerHand)
+    card = deck(end,randperm(size(deck,2), 1));
+    if turn == 1
+        playerHand = [playerHand,card];
+    else
+        dealerHand = [dealerHand,card];
+    end
+    deck(deck == card) = [];
+end
+
+function [playerHand2, card, deck] = dealCard2(turn,deck,playerHand2)
+    card = deck(end,randperm(size(deck,2), 1));
+    if turn == 1
+        playerHand2 = [playerHand2,card];
+    end
+    deck(deck == card) = [];
+end
+
+
+
+function [aces,playerValue,d] = playertotal(playerHand,d,playerValue,aces)
+    if length(playerHand) == 1
+        if d(playerHand(1)) == 1
+            aces = aces + 1;
+            d(playerHand(1)) = 11;
+            playerValue = playerValue + d(playerHand(1));
+        else
+            playerValue = d(playerHand(1));
+        end
+    elseif length(playerHand) == 2
+        if d(playerHand(2)) == 1
+            aces = aces + 1;
+            if playerValue <= 10 
+                d(playerHand(2)) = 11;
+                playerValue = playerValue + d(playerHand(2));
+            else
+                d(playerHand(2)) = 1;
+                playerValue = playerValue + d(playerHand(2));
+            end
+        else
+            playerValue = playerValue + d(playerHand(2));
+        end
+ 
+    elseif length(playerHand) == 3
+        if d(playerHand(3)) == 1
+            aces = aces + 1;
+            if playerValue <= 10 
+                d(playerHand(3)) = 11;
+                playerValue = playerValue + d(playerHand(3));
+            else
+                d(playerHand(3)) = 1;
+                playerValue = playerValue + d(playerHand(3));
+            end
+        else
+            playerValue = playerValue + d(playerHand(3));
+            if (playerValue > 21) && (d(playerHand(1)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(1)) = 1;
+            elseif (playerValue > 21) && (d(playerHand(2)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(2)) = 1;
+            end
+        end
+ 
+    elseif length(playerHand) == 4
+        if d(playerHand(4)) == 1
+            aces = aces + 1;
+            if playerValue <= 10 
+                d(playerHand(4)) = 11;
+                playerValue = playerValue + d(playerHand(4));
+            else
+                d(playerHand(4)) = 1;
+                playerValue = playerValue + d(playerHand(4));
+            end
+        else
+            playerValue = playerValue + d(playerHand(4));
+            if (playerValue > 21) && (d(playerHand(1)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(1)) = 1;
+            elseif (playerValue > 21) && (d(playerHand(2)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(2)) = 1;
+            elseif (playerValue > 21) && (d(playerHand(3)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(3)) = 1;
+            end
+        end
+
+    elseif length(playerHand) == 5
+        if d(playerHand(5)) == 1
+            aces = aces + 1;
+            if playerValue <= 10 
+                d(playerHand(5)) = 11;
+                playerValue = playerValue + d(playerHand(5));
+            else
+                d(playerHand(5)) = 1;
+                playerValue = playerValue + d(playerHand(5));
+            end
+        else
+            playerValue = playerValue + d(playerHand(5));
+            if (playerValue > 21) && (d(playerHand(1)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(1)) = 1;
+            elseif (playerValue > 21) && (d(playerHand(2)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(2)) = 1;
+            elseif (playerValue > 21) && (d(playerHand(3)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(3)) = 1;
+            elseif (playerValue > 21) && (d(playerHand(4)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(4)) = 1;
+            end
+        end
+       
+    elseif length(playerHand) == 6
+        if d(playerHand(6)) == 1
+            aces = aces + 1;
+            if playerValue <= 10 
+                d(playerHand(6)) = 11;
+                playerValue = playerValue + d(playerHand(6));
+            else
+                d(playerHand(6)) = 1;
+                playerValue = playerValue + d(playerHand(6));
+            end
+        else
+            playerValue = playerValue + d(playerHand(6));
+            if (playerValue > 21) && (d(playerHand(1)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(1)) = 1;
+            elseif (playerValue > 21) && (d(playerHand(2)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(2)) = 1;
+            elseif (playerValue > 21) && (d(playerHand(3)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(3)) = 1;
+            elseif (playerValue > 21) && (d(playerHand(4)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(4)) = 1;
+            elseif (playerValue > 21) && (d(playerHand(5)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(5)) = 1;
+            end
+        end
+      
+    elseif length(playerHand) == 7    
+        if d(playerHand(7)) == 1
+            aces = aces + 1;
+            if playerValue <= 10 
+                d(playerHand(7)) = 11;
+                playerValue = playerValue + d(playerHand(7));
+            else
+                d(playerHand(7)) = 1;
+                playerValue = playerValue + d(playerHand(7));
+            end
+        else
+            playerValue = playerValue + d(playerHand(7));
+            if (playerValue > 21) && (d(playerHand(1)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(1)) = 1;
+            elseif (playerValue > 21) && (d(playerHand(2)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(2)) = 1;
+            elseif (playerValue > 21) && (d(playerHand(3)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(3)) = 1;
+            elseif (playerValue > 21) && (d(playerHand(4)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(4)) = 1;
+            elseif (playerValue > 21) && (d(playerHand(5)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(5)) = 1;
+            elseif (playerValue > 21) && (d(playerHand(6)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(6)) = 1;
+            end
+        end
+           
+    elseif length(playerHand) == 8
+        if d(playerHand(8)) == 1
+            aces = aces + 1;
+            if playerValue <= 10 
+                d(playerHand(8)) = 11;
+                playerValue = playerValue + d(playerHand(8));
+            else
+                d(playerHand(8)) = 1;
+                playerValue = playerValue + d(playerHand(8));
+            end
+        else
+            playerValue = playerValue + d(playerHand(8));
+            if (playerValue > 21) && (d(playerHand(1)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(1)) = 1;
+            elseif (playerValue > 21) && (d(playerHand(2)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(2)) = 1;
+            elseif (playerValue > 21) && (d(playerHand(3)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(3)) = 1;
+            elseif (playerValue > 21) && (d(playerHand(4)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(4)) = 1;
+            elseif (playerValue > 21) && (d(playerHand(5)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(5)) = 1;
+            elseif (playerValue > 21) && (d(playerHand(6)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(6)) = 1;
+            elseif (playerValue > 21) && (d(playerHand(7)) == 11)
+                playerValue = playerValue - 10;
+                d(playerHand(7)) = 1;
+            end
+        end
+           
+    end
+end
+
+function [aces2,playerValue2,d] = player2total(playerHand2,d,aces2,playerValue2)
+   if length(playerHand2) == 1
+        if d(playerHand2(1)) == 1
+            aces2 = aces2 + 1;
+            d(playerHand(1)) = 11;
+            playerValue2 = playerValue2 + d(playerHand2(1));
+        else
+            playerValue2 = d(playerHand2(1));
+        end
+
+    elseif length(playerHand2) == 2
+        if d(playerHand2(2)) == 1
+            aces2 = aces2 + 1;
+            if playerValue2 <= 10 
+                d(playerHand2(2)) = 11;
+                playerValue2 = playerValue2 + d(playerHand2(2));
+            else
+                d(playerHand2(2)) = 1;
+                playerValue2 = playerValue2 + d(playerHand2(2));
+            end
+        else
+            playerValue2 = playerValue2 + d(playerHand2(2));
+        end
+ 
+    elseif length(playerHand2) == 3
+        if d(playerHand2(3)) == 1
+            aces2 = aces2 + 1;
+            if playerValue2 <= 10 
+                d(playerHand2(3)) = 11;
+                playerValue2 = playerValue2 + d(playerHand2(3));
+            else
+                d(playerHand2(3)) = 1;
+                playerValue2 = playerValue2 + d(playerHand2(3));
+            end
+        else
+            playerValue2 = playerValue2 + d(playerHand2(3));
+            if (playerValue2 > 21) && (d(playerHand2(1)) == 11)
+                playerValue2 = playerValue2 - 10;
+                d(playerHand2(1)) = 1;
+            elseif (playerValue2 > 21) && (d(playerHand2(2)) == 11)
+                playerValue2 = playerValue2 - 10;
+                d(playerHand2(2)) = 1;
+            end
+        end
+ 
+    elseif length(playerHand2) == 4
+        if d(playerHand2(4)) == 1
+            aces2 = aces2 + 1;
+            if playerValue2 <= 10 
+                d(playerHand2(4)) = 11;
+                playerValue2 = playerValue2 + d(playerHand2(4));
+            else
+                d(playerHand2(4)) = 1;
+                playerValue2 = playerValue2 + d(playerHand2(4));
+            end
+        else
+            playerValue2 = playerValue2 + d(playerHand2(4));
+            if (playerValue2 > 21) && (d(playerHand2(1)) == 11)
+                playerValue2 = playerValue2 - 10;
+                d(playerHand2(1)) = 1;
+            elseif (playerValue2 > 21) && (d(playerHand2(2)) == 11)
+                playerValue2 = playerValue2 - 10;
+                d(playerHand2(2)) = 1;
+            elseif (playerValue2 > 21) && (d(playerHand2(3)) == 11)
+                playerValue2 = playerValue2 - 10;
+                d(playerHand2(3)) = 1;
+            end
+        end
+    end
+
+end
+
+function [acesD,dealerValue,d] = dealertotal(dealerHand,d,dealerValue,acesD)
+    if length(dealerHand) == 1
+        if d(dealerHand(1)) == 1
+            acesD = acesD + 1;
+            d(dealerHand(1)) = 11;
+            dealerValue = dealerValue + d(dealerHand(1));
+        else
+            dealerValue = d(dealerHand(1));
+        end
+    elseif length(dealerHand) == 2
+        if d(dealerHand(2)) == 1
+            acesD = acesD + 1;
+            if dealerValue <= 10 
+                d(dealerHand(2)) = 11;
+                dealerValue = dealerValue + d(dealerHand(2));
+            else
+                d(dealerHand(2)) = 1;
+                dealerValue = dealerValue + d(dealerHand(2));
+            end
+        else
+            dealerValue = dealerValue + d(dealerHand(2));
+        end
+ 
+    elseif length(dealerHand) == 3
+        if d(dealerHand(3)) == 1
+            acesD = acesD + 1;
+            if dealerValue <= 10 
+                d(dealerHand(3)) = 11;
+                dealerValue = dealerValue + d(dealerHand(3));
+            else
+                d(dealerHand(3)) = 1;
+                dealerValue = dealerValue + d(dealerHand(3));
+            end
+        else
+            dealerValue = dealerValue + d(dealerHand(3));
+            if (dealerValue > 21) && (d(dealerHand(1)) == 11)
+                dealerValue = dealerValue - 10;
+                d(dealerHand(1)) = 1;
+            elseif (dealerValue > 21) && (d(dealerHand(2)) == 11)
+                dealerValue = dealerValue - 10;
+                d(dealerHand(2)) = 1;
+            end
+        end
+ 
+    elseif length(dealerHand) == 4
+        if d(dealerHand(4)) == 1
+            acesD = acesD + 1;
+            if dealerValue <= 10 
+                d(dealerHand(4)) = 11;
+                dealerValue = dealerValue + d(dealerHand(4));
+            else
+                d(dealerHand(4)) = 1;
+                dealerValue = dealerValue + d(dealerHand(4));
+            end
+        else
+            dealerValue = dealerValue + d(dealerHand(4));
+            if (dealerValue > 21) && (d(dealerHand(1)) == 11)
+                dealerValue = dealerValue - 10;
+                d(dealerHand(1)) = 1;
+            elseif (dealerValue > 21) && (d(dealerHand(2)) == 11)
+                dealerValue = dealerValue - 10;
+                d(dealerHand(2)) = 1;
+            elseif (dealerValue > 21) && (d(dealerHand(3)) == 11)
+                dealerValue = dealerValue - 10;
+                d(dealerHand(3)) = 1;
+            end
+        end
+
+    elseif length(dealerHand) == 5
+        if d(dealerHand(5)) == 1
+            acesD = acesD + 1;
+            if dealerValue <= 10 
+                d(dealerHand(5)) = 11;
+                dealerValue = dealerValue + d(dealerHand(5));
+            else
+                d(dealerHand(5)) = 1;
+                dealerValue = dealerValue + d(dealerHand(5));
+            end
+        else
+            dealerValue = dealerValue + d(dealerHand(5));
+            if (dealerValue > 21) && (d(dealerHand(1)) == 11)
+                dealerValue = dealerValue - 10;
+                d(dealerHand(1)) = 1;
+            elseif (dealerValue > 21) && (d(dealerHand(2)) == 11)
+                dealerValue = dealerValue - 10;
+                d(dealerHand(2)) = 1;
+            elseif (dealerValue > 21) && (d(dealerHand(3)) == 11)
+                dealerValue = dealerValue - 10;
+                d(dealerHand(3)) = 1;
+            elseif (dealerValue > 21) && (d(dealerHand(4)) == 11)
+                dealerValue = dealerValue - 10;
+                d(dealerHand(4)) = 1;
+            end
+        end
+       
+    elseif length(dealerHand) == 6
+        if d(dealerHand(6)) == 1
+            acesD = acesD + 1;
+            if dealerValue <= 10 
+                d(dealerHand(6)) = 11;
+                dealerValue = dealerValue + d(dealerHand(6));
+            else
+                d(dealerHand(6)) = 1;
+                dealerValue = dealerValue + d(dealerHand(6));
+            end
+        else
+            dealerValue = dealerValue + d(dealerHand(6));
+            if (dealerValue > 21) && (d(dealerHand(1)) == 11)
+                dealerValue = dealerValue - 10;
+                d(dealerHand(1)) = 1;
+            elseif (dealerValue > 21) && (d(dealerHand(2)) == 11)
+                dealerValue = dealerValue - 10;
+                d(dealerHand(2)) = 1;
+            elseif (dealerValue > 21) && (d(dealerHand(3)) == 11)
+                dealerValue = dealerValue - 10;
+                d(dealerHand(3)) = 1;
+            elseif (dealerValue > 21) && (d(dealerHand(4)) == 11)
+                dealerValue = dealerValue - 10;
+                d(dealerHand(4)) = 1;
+            elseif (dealerValue > 21) && (d(dealerHand(5)) == 11)
+                dealerValue = dealerValue - 10;
+                d(dealerHand(5)) = 1;
+            end
+        end
+    end
+end
+
+
+function foreground = balanceButton(foreground,newBalance)
+    formattedBalance = sprintf('%05d', newBalance); %See line 579
+    for i = 1:5
+        %Use math to relate the foreground position to the balance number
+        foreground(7,i+2) = 181 + str2double(formattedBalance(i));
+    end
+end
+
+end
+
+
+
